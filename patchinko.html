@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>類人猿 Pachinko</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      background-color: #111;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #ff0033;
+      text-shadow: 0 0 10px #ff0033, 0 0 20px #ff3333, 0 0 30px #ff6666;
+      animation: pulse 2s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { text-shadow: 0 0 10px #ff0033, 0 0 20px #ff3333, 0 0 30px #ff6666; }
+      100% { text-shadow: 0 0 20px #ff6666, 0 0 30px #ff9999, 0 0 40px #ffcccc; }
+    }
+    .pachinko-board {
+      position: relative;
+      width: 650px;
+      height: 500px;
+      margin: 20px auto;
+      border: 4px solid #00ccff;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #222, #333);
+      box-shadow: 0 0 20px #00ccff, inset 0 0 15px #00ccff;
+      overflow: hidden;
+    }
+    .peg {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ffcc00;
+      border-radius: 50%;
+      animation: spin 5s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0); }
+      100% { transform: rotate(360deg); }
+    }
+    .ball {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, #ff5722, #ff0000);
+      border-radius: 50%;
+      box-shadow: 0 0 10px #ff5722, 0 0 20px #ff0000;
+    }
+    .slot {
+      position: absolute;
+      bottom: 0;
+      width: 50px;
+      height: 50px;
+      border: 2px solid #00ff00;
+      background-color: #222;
+      color: #00ff00;
+      font-size: 1.2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      text-shadow: 0 0 10px #00ff00;
+    }
+    #message {
+      font-size: 1.2em;
+      margin: 20px;
+      color: #ffcc00;
+      text-shadow: 0 0 10px #ffcc00, 0 0 20px #ffdd33;
+    }
+    #drop-ball-button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      color: #fff;
+      background-color: #ff0033;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff0033, 0 0 20px #ff6666;
+      transition: all 0.3s ease;
+    }
+    #drop-ball-button:hover {
+      background-color: #ff6666;
+      box-shadow: 0 0 20px #ff9999, 0 0 30px #ffcccc;
+    }
+    .star {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #ffcc00, #ff9900);
+      clip-path: polygon(
+        50% 0%, 
+        61% 35%, 
+        98% 35%, 
+        68% 57%, 
+        79% 91%, 
+        50% 70%, 
+        21% 91%, 
+        32% 57%, 
+        2% 35%, 
+        39% 35%
+      );
+      box-shadow: 0 0 20px #ffcc00, 0 0 30px #ff9900;
+    }
+    .star-left {
+      left: calc(50% - 400px); /* Positioned to the left of the board */
+      top: 80px; /* Same vertical alignment as the top of the board */
+      animation: spin-left 4s linear infinite;
+    }
+    .star-right {
+      left: calc(50% + 300px); /* Positioned to the right of the board */
+      top: 80px; /* Same vertical alignment as the top of the board */
+      animation: spin-right 4s linear infinite;
+    }
+    @keyframes spin-left {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
+    @keyframes spin-right {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>類人猿 Pachinko</h1>
+  <p id="message">À défaut de lire vos copies et les TP, voici comment on vous attribue une note :</p>
+  <div id="pachinko-board" class="pachinko-board"></div>
+  <div class="star star-left"></div>
+  <div class="star star-right"></div>
+  <button id="drop-ball-button">Lancer la boule</button>
+
+  <script>
+    const board = document.getElementById("pachinko-board");
+    const message = document.getElementById("message");
+    const dropButton = document.getElementById("drop-ball-button");
+    const slots = Array.from({ length: 13 }, (_, i) => i + 7); // Generate slots from 7 to 19
+    let hasDropped = false;
+
+    // Create slots
+    for (let i = 0; i < slots.length; i++) {
+      const slot = document.createElement("div");
+      slot.classList.add("slot");
+      slot.style.left = `${i * 50}px`;
+      slot.textContent = slots[i];
+      board.appendChild(slot);
+    }
+
+    // Create pegs in a triangular pattern
+    const pegRows = 9;
+    const pegSpacing = 50;
+    const baseWidth = 5;
+    for (let row = 0; row < pegRows; row++) {
+      const pegsInRow = baseWidth + row;
+      for (let col = 0; col < pegsInRow; col++) {
+        const peg = document.createElement("div");
+        peg.classList.add("peg");
+        peg.style.top = `${row * pegSpacing}px`;
+        peg.style.left = `${(col * pegSpacing) + (650 / 2 - (pegsInRow * pegSpacing) / 2)}px`;
+        board.appendChild(peg);
+      }
+    }
+
+    // Drop ball function
+    function dropBall() {
+      if (hasDropped) return;
+      hasDropped = true;
+
+      const ball = document.createElement("div");
+      ball.classList.add("ball");
+      ball.style.left = "300px";
+      board.appendChild(ball);
+
+      let y = 0;
+      let x = 300;
+
+      message.textContent = "La note est en route, suspense...";
+
+      const interval = setInterval(() => {
+        y += 5;
+        x += (Math.random() - 0.5) * 20;
+
+        if (x < 10) x = 10;
+        if (x > 640) x = 640;
+
+        if (y % pegSpacing === 0) {
+          x += (Math.random() < 0.5 ? -15 : 15);
+        }
+
+        ball.style.top = `${y}px`;
+        ball.style.left = `${x}px`;
+
+        if (y >= 450) {
+          clearInterval(interval);
+
+          const slotIndex = Math.floor(x / 50);
+          const finalScore = slots[slotIndex] || 16;
+
+          message.textContent = `On t'a mis à ton contrôle la note de ${finalScore}/20 !`;
+
+          setTimeout(() => {
+            ball.remove();
+          }, 1000);
+        }
+      }, 30);
+    }
+
+    dropButton.addEventListener("click", dropBall);
+  </script>
+</body>
+</html>
